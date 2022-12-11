@@ -1,21 +1,72 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, PanResponder } from "react-native";
+import styled from "styled-components/native";
+
+const Container = styled.View`
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+`;
+
+const Box = styled.View`
+    width: 200px;
+    height: 200px;
+    background-color: orange;
+`;
+
+const AnimatedBox = Animated.createAnimatedComponent(Box);
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+    const POSITION = useRef(
+        new Animated.ValueXY({
+            x: 0,
+            y: 0,
+        })
+    ).current;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+    const borderRadius = POSITION.y.interpolate({
+        inputRange: [-300, 300],
+        outputRange: [100, 0],
+    });
+    const bgColor = POSITION.y.interpolate({
+        inputRange: [-300, 300],
+        outputRange: ["rgb(255,99,71)", "rgb(71, 166,255)"],
+    });
+
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onPanResponderGrant: () => {
+                console.log("Touch Started");
+                POSITION.setOffset({
+                    x: POSITION.x._value,
+                    y: POSITION.y._value,
+                });
+            },
+            onPanResponderMove: (_, { dx, dy }) => {
+                console.log("Finger Moiveng");
+                POSITION.setValue({
+                    x: dx,
+                    y: dy,
+                });
+            },
+            onPanResponderRelease: () => {
+                console.log("Touch Finished");
+                POSITION.flattenOffset();
+            },
+        })
+    ).current;
+
+    return (
+        <Container>
+            <AnimatedBox
+                {...panResponder.panHandlers}
+                style={{
+                    borderRadius: borderRadius,
+                    backgroundColor: bgColor,
+                    transform: POSITION.getTranslateTransform(),
+                }}
+            />
+        </Container>
+    );
+}
